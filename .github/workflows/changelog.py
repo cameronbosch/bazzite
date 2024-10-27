@@ -42,9 +42,9 @@ CHANGELOG_TITLE = "{tag}: {pretty}"
 CHANGELOG_FORMAT = """\
 {handwritten}
 
-From previous `{target}` version `{prev}` there have been the following changes. **One package per new version shown.**
-
 Visit [bazzite.gg](https://bazzite.gg) for more information and to download Bazzite.
+
+From previous `{target}` version `{prev}` there have been the following changes. **One package per new version shown.**
 
 ### Major packages
 | Name | Version |
@@ -58,6 +58,15 @@ Visit [bazzite.gg](https://bazzite.gg) for more information and to download Bazz
 | **[HHD](https://github.com/hhd-dev/hhd)** | {pkgrel:hhd} |
 
 {changes}
+
+### How to update
+For current users, type the following to rebase to this version:
+```bash
+# For this branch (if latest):
+bazzite-rollback-helper rebase {target}
+# For this specific image:
+bazzite-rollback-helper rebase {curr}
+```
 """
 HANDWRITTEN_PLACEHOLDER = """\
 This is an automatically generated changelog for release `{curr}`."""
@@ -287,6 +296,10 @@ def get_commits(prev_manifests, manifests, workdir: str):
             if not commit:
                 continue
             hash, short, subject = commit.split(" ", 2)
+
+            if subject.lower().startswith("merge"):
+                continue
+
             out += (
                 COMMIT_FORMAT.replace("{short}", short)
                 .replace("{subject}", subject)
@@ -326,9 +339,9 @@ def generate_changelog(
             finish = ""
         
         # Remove .0 from curr
-        curr = re.sub(r"\.\d{1,2}$", "", curr)
+        curr_pretty = re.sub(r"\.\d{1,2}$", "", curr)
         # Remove target- from curr
-        curr_pretty = re.sub(rf"^[a-z]+-", "", curr)
+        curr_pretty = re.sub(rf"^[a-z]+-", "", curr_pretty)
         pretty = target.capitalize() + " (F" + curr_pretty
         if finish and target != "stable":
             pretty += ", #" + finish[:7]

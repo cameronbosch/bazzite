@@ -242,7 +242,6 @@ RUN --mount=type=cache,dst=/var/cache/rpm-ostree \
     ostree container commit
 
 # Setup firmware
-# Downgrade firmware to address galileo waking while asleep
 RUN --mount=type=cache,dst=/var/cache/rpm-ostree \
     mkdir -p /tmp/linux-firmware-neptune && \
     curl -Lo /tmp/linux-firmware-neptune/cs35l41-dsp1-spk-cali.bin https://gitlab.com/evlaV/linux-firmware-neptune/-/raw/"${JUPITER_FIRMWARE_VERSION}"/cs35l41-dsp1-spk-cali.bin && \
@@ -271,6 +270,13 @@ RUN --mount=type=cache,dst=/var/cache/rpm-ostree \
     mv -vf /tmp/linux-firmware-galileo/* /usr/lib/firmware/qca/ && \
     rm -rf /tmp/linux-firmware-galileo && \
     rm -rf /usr/share/alsa/ucm2/conf.d/acp5x/Valve-Jupiter-1.conf && \
+    mkdir -p /tmp/aw87559 && \
+    mkdir -p /usr/lib/firmware/aw87559 && \
+    curl -Lo /tmp/aw87559/aw87xxx_acf.bin https://github.com/orangepi-xunlong/firmware/raw/refs/heads/master/aw87xxx_acf.bin && \
+    xz --check=crc32 /tmp/aw87559/aw87xxx_acf.bin && \
+    mv -vf /tmp/aw87559/aw87xxx_acf.bin.xz /usr/lib/firmware/aw87559/aw87xxx_acf.bin.xz && \
+    ln -s /usr/lib/firmware/aw87559/aw87xxx_acf.bin.xz /usr/lib/firmware/aw87xxx_acf.bin.xz && \
+    rm -rf /tmp/aw87559 && \
     if [[ "${IMAGE_FLAVOR}" =~ "asus" ]]; then \
         curl -Lo /etc/yum.repos.d/_copr_lukenukem-asus-linux.repo https://copr.fedorainfracloud.org/coprs/lukenukem/asus-linux/repo/fedora-$(rpm -E %fedora)/lukenukem-asus-linux-fedora-$(rpm -E %fedora).repo && \
         rpm-ostree install \
@@ -421,6 +427,7 @@ RUN --mount=type=cache,dst=/var/cache/rpm-ostree \
         ydotool \
         yafti \
         stress-ng \
+        btrfs-assistant \
         lsb_release && \
     rpm-ostree install \
         ublue-update && \
@@ -430,6 +437,7 @@ RUN --mount=type=cache,dst=/var/cache/rpm-ostree \
     sed -i 's/max_cpu_load_percent.*/max_cpu_load_percent = 100.0/' /etc/ublue-update/ublue-update.toml && \
     sed -i 's/max_mem_percent.*/max_mem_percent = 90.0/' /etc/ublue-update/ublue-update.toml && \
     sed -i 's/dbus_notify.*/dbus_notify = false/' /etc/ublue-update/ublue-update.toml && \
+    sed -i 's/ --xdg-runtime=\\"${XDG_RUNTIME_DIR}\\"//g' /usr/bin/btrfs-assistant-launcher && \
     curl -Lo /usr/bin/installcab https://raw.githubusercontent.com/KyleGospo/steam-proton-mf-wmv/master/installcab.py && \
     chmod +x /usr/bin/installcab && \
     curl -Lo /usr/bin/install-mf-wmv https://github.com/KyleGospo/steam-proton-mf-wmv/blob/master/install-mf-wmv.sh && \
@@ -551,6 +559,8 @@ RUN --mount=type=cache,dst=/var/cache/rpm-ostree \
         rpm-ostree override replace \
         --experimental \
         --from repo=copr:copr.fedorainfracloud.org:ublue-os:staging \
+            mutter \
+            mutter-common \
             gnome-shell && \
         rpm-ostree install \
             nautilus-gsconnect \
@@ -704,6 +714,7 @@ RUN rm -f /etc/profile.d/toolbox.sh && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/negativo17-fedora-multimedia.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/negativo17-fedora-steam.repo && \
     sed -i 's@enabled=1@enabled=0@g' /etc/yum.repos.d/negativo17-fedora-rar.repo && \
+    sed -i 's#/var/lib/selinux#/etc/selinux#g' /usr/lib/python3.*/site-packages/setroubleshoot/util.py && \
     mkdir -p /etc/flatpak/remotes.d && \
     curl -Lo /etc/flatpak/remotes.d/flathub.flatpakrepo https://dl.flathub.org/repo/flathub.flatpakrepo && \
     systemctl enable brew-dir-fix.service && \
@@ -720,6 +731,7 @@ RUN rm -f /etc/profile.d/toolbox.sh && \
     systemctl enable bazzite-hardware-setup.service && \
     systemctl disable tailscaled.service && \
     systemctl enable dev-hugepages1G.mount && \
+    systemctl enable bazzite-snapper-setup && \
     systemctl --global enable bazzite-user-setup.service && \
     systemctl --global enable podman.socket && \
     systemctl --global enable systemd-tmpfiles-setup.service && \
