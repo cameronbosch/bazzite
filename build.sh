@@ -22,3 +22,8 @@ dnf install -y tmux
 #### Example for enabling a System Unit File
 
 systemctl enable podman.socket
+
+# My additions
+dnf config-manager addrepo --from-repofile=https://download.opensuse.org/repositories/home:paul4us/Fedora_41/home:paul4us.repo
+dnf install klassy
+dnf install fish
